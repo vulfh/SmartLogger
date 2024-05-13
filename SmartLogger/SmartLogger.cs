@@ -13,7 +13,21 @@ public class SmartLogger : ILogAggregator
 
     private ConcurrentBag<LogMessage> _messages = new ConcurrentBag<LogMessage>();
 
-    private Configuration _configuration = new Configuration();
+    private Configuration _configuration;
+
+    #region Constructor
+
+    public SmartLogger()
+    {
+        _configuration  = new Configuration();
+    }
+
+    public SmartLogger(Configuration configuration)
+    {
+        _configuration = configuration;
+    }
+
+    #endregion
 
     #region ILogAggregator
     void ILogAggregator.Flush(Severity? severity)
@@ -28,37 +42,37 @@ public class SmartLogger : ILogAggregator
 
     void ILogAggregator.LogDebug(string message, int lineNumber, string memberName, string filePath)
     {
-        throw new NotImplementedException();
+        AddLogMessage(Severity.DEBUG, message, lineNumber, memberName, filePath);
     }
 
     void ILogAggregator.LogError(string message, int lineNumber, string memberName, string filePath)
     {
-        throw new NotImplementedException();
+        AddLogMessage(Severity.ERROR, message, lineNumber, memberName, filePath);
     }
 
     void ILogAggregator.LogError(Exception exception, int lineNumber, string memberName, string filePath)
     {
-        throw new NotImplementedException();
+        AddLogMessage(Severity.ERROR, exception, lineNumber, memberName, filePath);
     }
 
     void ILogAggregator.LogFatal(string message, int lineNumber, string memberName, string filePath)
     {
-        throw new NotImplementedException();
+        AddLogMessage(Severity.FATAL, message, lineNumber, memberName, filePath);
     }
 
     void ILogAggregator.LogFatal(Exception exception, int lineNumber, string memberName, string filePath)
     {
-        throw new NotImplementedException();
+        AddLogMessage(Severity.FATAL, exception, lineNumber, memberName, filePath);
     }
 
     void ILogAggregator.LogInformation(string message, int lineNumber, string memberName, string filePath)
     {
-        throw new NotImplementedException();
+        AddLogMessage(Severity.INFORMATION, message, lineNumber, memberName, filePath);
     }
 
     void ILogAggregator.LogWarning(string message, int lineNumber, string memberName, string filePath)
     {
-        throw new NotImplementedException();
+        AddLogMessage(Severity.WARNING, message, lineNumber, memberName, filePath);
     }
 
     bool ILogAggregator.RegisterObserver(string name, Action<LogMessage> observer)
@@ -75,5 +89,43 @@ public class SmartLogger : ILogAggregator
     {
         throw new NotImplementedException();
     }
+    #endregion
+
+    #region Private Methods
+
+    private void AddLogMessage(Severity severity,
+                               string message,
+                               int lineNumber,
+                               string sourcePath,
+                               string memberName)
+    {
+        var logMessage = new LogMessage(severity,
+                                        DateTime.Now,
+                                        message,
+                                        null,
+                                        lineNumber,
+                                        sourcePath,
+                                        memberName);
+        _messages.Add(logMessage);
+
+    }
+
+    private void AddLogMessage(Severity severity,
+                              Exception exception,
+                              int lineNumber,
+                              string sourcePath,
+                              string memberName)
+    {
+        var logMessage = new LogMessage(severity,
+                                        DateTime.Now,
+                                        null,
+                                        exception,
+                                        lineNumber,
+                                        sourcePath,
+                                        memberName);
+        _messages.Add(logMessage);
+
+    }
+
     #endregion
 }
