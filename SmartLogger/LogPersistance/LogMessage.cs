@@ -3,8 +3,8 @@
 public record LogMessage(Severity serverity,
                          DateTime TimeStamp,
                          string Message,
-                         Exception exception,
+                         Exception? exception,
                          int Line, 
                          string Source,
-                         string Memeber);
+                         string Member);
 

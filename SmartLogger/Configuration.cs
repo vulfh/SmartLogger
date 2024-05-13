@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SmartLogger;
+﻿namespace SmartLogger;
 
 public class Configuration
 {
@@ -32,6 +26,11 @@ public class Configuration
     /// Flag to indicate whether add log timestamp
     /// </summary>
     public bool LogTimeStamp { get; private set; } = true;
+
+    /// <summary>
+    /// TimeZone of log timestamp. By default is UTC
+    /// </summary>
+    public TimeZoneInfo TimeZone { get; private set; } = TimeZoneInfo.Utc;
 
 
 }
