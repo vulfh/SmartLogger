@@ -15,6 +15,8 @@ public class SmartLogger : ILogAggregator
 
     private Configuration _configuration;
 
+    private int _eventSequenceCounter = 0;
+
     #region Constructor
 
     public SmartLogger()
@@ -99,7 +101,9 @@ public class SmartLogger : ILogAggregator
                                string sourcePath,
                                string memberName)
     {
-        var logMessage = new LogMessage(severity,
+        var sequence = Interlocked.Increment(ref _eventSequenceCounter);
+        var logMessage = new LogMessage(sequence,
+                                        severity,
                                         DateTime.Now,
                                         message,
                                         null,
@@ -116,7 +120,9 @@ public class SmartLogger : ILogAggregator
                               string sourcePath,
                               string memberName)
     {
-        var logMessage = new LogMessage(severity,
+        var sequence = Interlocked.Increment(ref _eventSequenceCounter);
+        var logMessage = new LogMessage(sequence,                            
+                                        severity,
                                         DateTime.Now,
                                         null,
                                         exception,
