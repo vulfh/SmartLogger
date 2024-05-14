@@ -102,8 +102,7 @@ public class SmartLogger : ILogAggregator
                                string memberName)
     {
         var sequence = Interlocked.Increment(ref _eventSequenceCounter);
-        var logMessage = new LogMessage(
-                                        sequence,
+        var logMessage = new LogMessage(sequence,
                                         severity,
                                         DateTime.Now,
                                         message,
@@ -122,8 +121,7 @@ public class SmartLogger : ILogAggregator
                               string memberName)
     {
         var sequence = Interlocked.Increment(ref _eventSequenceCounter);
-        var logMessage = new LogMessage(
-                                        sequence,                            
+        var logMessage = new LogMessage(sequence,                            
                                         severity,
                                         DateTime.Now,
                                         null,
