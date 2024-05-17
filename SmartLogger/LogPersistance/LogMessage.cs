@@ -1,7 +1,7 @@
 ﻿namespace SmartLogger.LogPersistance;
 
 public record LogMessage(int Sequence,                     
-                         Severity serverity,
+                         Severity Serverity,
                          DateTime TimeStamp,
                          string Message,
                          Exception? exception,
