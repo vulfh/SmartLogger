@@ -1,4 +1,5 @@
-﻿using SmartLogger.LogPersistance;
+﻿using SmartLogger.Infra;
+using SmartLogger.LogPersistance;
 using System.Runtime.CompilerServices;
 namespace SmartLogger
 {
@@ -35,12 +36,10 @@ namespace SmartLogger
                       [CallerLineNumber] int lineNumber = 0,
                       [CallerMemberName] string memberName = Constants.General.NotAssigned,
                       [CallerFilePath] string filePath = Constants.General.NotAssigned);
-        void SetLogPersistanceSeverity(Severity severity);
+        void Flush(Severity severity = Severity.INFORMATION);
+        Task FlushAsync(Severity severity = Severity.INFORMATION);
 
-        void Flush(Severity? severity);
-        Task FlushAsync(Severity? severity);
-
-        bool RegisterObserver(string name, Action<LogMessage> observer);
+        void RegisterObserver(string name, NotifySubscriberCallback observer);
 
         bool UnregisterObserver(string name);
 
