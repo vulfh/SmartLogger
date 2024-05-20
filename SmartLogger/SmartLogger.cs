@@ -51,12 +51,16 @@ public class SmartLogger : ILogAggregator
                 NotifySubscribers(message);
             }
 
+            Interlocked.CompareExchange(ref _mode, AGGREGATE_MODE, FLUSH_MODE);
+
         }
     }
 
     public Task FlushAsync(Severity severity = Severity.INFORMATION)
     {
-        return Task.Run(() => Flush(severity));
+        var result = new AsyncMethodCaller(() => Flush(severity))
+              .BeginInvoke(null, null) as Task;
+        return result;
     }
 
 
