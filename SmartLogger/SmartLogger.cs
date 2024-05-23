@@ -18,7 +18,7 @@ public class SmartLogger : ILogAggregator
 
     #endregion
 
-    private ConcurrentQueue<LogMessage> _messages = new();
+    private ConcurrentQueue<LogMessageContainer> _messages = new();
     private ConcurrentDictionary<string, NotifySubscriberCallback> _flushSubscribers = new();
 
     private Configuration _configuration;
@@ -46,9 +46,11 @@ public class SmartLogger : ILogAggregator
     {
         if (Interlocked.CompareExchange(ref _mode, FLUSH_MODE, AGGREGATE_MODE) == AGGREGATE_MODE)
         {
-            while(_messages.TryDequeue(out var message))
+            AddStopFlushMarker();
+            while(_messages.TryDequeue(out var message) 
+                  && !message.IsStopFlushMarker)
             {
-                NotifySubscribers(message);
+                NotifySubscribers(message.Message);
             }
 
             Interlocked.CompareExchange(ref _mode, AGGREGATE_MODE, FLUSH_MODE);
@@ -59,8 +61,8 @@ public class SmartLogger : ILogAggregator
     public Task FlushAsync(Severity severity = Severity.INFORMATION)
     {
         var result = new AsyncMethodCaller(() => Flush(severity))
-              .BeginInvoke(null, null) as Task;
-        return result;
+                         .BeginInvoke(null, null);
+        return Task.Factory.FromAsync(result, (result) => { });
     }
 
 
@@ -129,7 +131,7 @@ public class SmartLogger : ILogAggregator
                                             lineNumber,
                                             sourcePath,
                                             memberName);
-            _messages.Enqueue(logMessage);
+            _messages.Enqueue(new LogMessageContainer(logMessage));
         });
 
     }
@@ -150,9 +152,14 @@ public class SmartLogger : ILogAggregator
                                             lineNumber,
                                             sourcePath,
                                             memberName);
-            _messages.Enqueue(logMessage);
+            _messages.Enqueue(new LogMessageContainer(logMessage));
         });
 
+    }
+
+    private void AddStopFlushMarker()
+    {
+        _messages.Enqueue(new LogMessageContainer(null, true));
     }
 
     private void DoActionOnlyInAggregateMode(Action action)
