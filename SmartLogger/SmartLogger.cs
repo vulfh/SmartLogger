@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace SmartLogger;
 
-public class SmartLogger : ILogAggregator
+public class SmartLogger : ILogAggregator, IDisposable
 {
     #region Constants
 
@@ -20,6 +20,7 @@ public class SmartLogger : ILogAggregator
 
     private ConcurrentQueue<LogMessageContainer> _messages = new();
     private ConcurrentDictionary<string, NotifySubscriberCallback> _flushSubscribers = new();
+    private ConcurrentQueue<FlushRequest> _flushRequests = new();
 
     private Configuration _configuration;
 
@@ -44,17 +45,28 @@ public class SmartLogger : ILogAggregator
     #region ILogAggregator
     public void Flush(Severity severity = Severity.INFORMATION)
     {
+        AddStopFlushMarker();
+        _flushRequests.Enqueue(new FlushRequest(severity));
         if (Interlocked.CompareExchange(ref _mode, FLUSH_MODE, AGGREGATE_MODE) == AGGREGATE_MODE)
         {
-            AddStopFlushMarker();
-            while(_messages.TryDequeue(out var message) 
-                  && !message.IsStopFlushMarker)
+            while (_flushRequests.TryDequeue(out var flushRequest))
             {
-                NotifySubscribers(message.Message);
+                FlushTillStopMarker(flushRequest.Severity);   
             }
 
             Interlocked.CompareExchange(ref _mode, AGGREGATE_MODE, FLUSH_MODE);
+        }
+    }
 
+    private void FlushTillStopMarker(Severity severity)
+    {
+        while (_messages.TryDequeue(out var message)
+              && !message.IsStopFlushMarker)
+        {
+            if (message?.Message?.Serverity >= severity)
+            {
+                NotifySubscribers(message.Message);
+            }
         }
     }
 
@@ -111,6 +123,17 @@ public class SmartLogger : ILogAggregator
     {
         return _flushSubscribers.Remove(name, out _);
     }
+    #endregion
+
+    #region IDosposable
+
+    public void Dispose()
+    {
+        _messages.Clear();
+        _flushSubscribers.Clear();
+        _flushSubscribers.Clear();
+    }
+
     #endregion
 
     #region Private Methods
