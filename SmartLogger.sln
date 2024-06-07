@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartLogger", "SmartLogger\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{46AB493E-C191-4BBB-8F7D-5EB8EC2BBC7C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartLoggerSampleApplication", "SmartLoggerSampleApplication\SmartLoggerSampleApplication.csproj", "{5978C983-36F8-4BFD-B960-38B307324621}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartLoggerSampleApplication", "SmartLoggerSampleApplication\SmartLoggerSampleApplication.csproj", "{5978C983-36F8-4BFD-B960-38B307324621}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
