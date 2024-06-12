@@ -9,6 +9,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{46AB
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartLoggerSampleApplication", "SmartLoggerSampleApplication\SmartLoggerSampleApplication.csproj", "{5978C983-36F8-4BFD-B960-38B307324621}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{130866E0-DDE1-48CA-81C2-9281B8A4D261}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,6 +30,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{9F648962-2076-4412-BD61-F9CB47C51E7A} = {130866E0-DDE1-48CA-81C2-9281B8A4D261}
 		{5978C983-36F8-4BFD-B960-38B307324621} = {46AB493E-C191-4BBB-8F7D-5EB8EC2BBC7C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

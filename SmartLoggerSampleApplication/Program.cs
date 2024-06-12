@@ -1,4 +1,4 @@
-using SmartLogger;
+using SmartLogger.Core;
 using SmartLoggerSampleApplication.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddScoped<ILogAggregator, SmartLogger.SmartLogger>();
+builder.Services.AddScoped<ILogAggregator, SmartLogger.Core.SmartLogger>();
 
 var app = builder.Build();
 
