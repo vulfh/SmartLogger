@@ -1,4 +1,4 @@
-﻿namespace SmartLogger.LogPersistance;
+﻿namespace SmartLogger.Core.LogPersistance;
 
 public record LogMessage(int Sequence,                     
                          Severity Serverity,
