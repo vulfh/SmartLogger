@@ -1,5 +1,5 @@
-﻿using SmartLogger.LogPersistance;
+﻿using SmartLogger.Core.LogPersistance;
 
-namespace SmartLogger.Infra;
+namespace SmartLogger.Core.Infra;
 
 public delegate  void NotifySubscriberCallback(LogMessage message);  

@@ -1,13 +1,9 @@
-﻿using SmartLogger.Infra;
-using SmartLogger.LogPersistance;
-using System;
+﻿using SmartLogger.Core.Infra;
+using SmartLogger.Core.LogPersistance;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace SmartLogger;
+
+namespace SmartLogger.Core;
 
 public class SmartLogger : ILogAggregator, IDisposable
 {

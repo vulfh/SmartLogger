@@ -1,6 +1,6 @@
 ﻿namespace SmartLoggerSampleApplication.Middleware;
 
-using SmartLogger;
+using SmartLogger.Core;
 using SmartLoggerSampleApplication.Exceptions;
 using System.Net;
 using System.Text.Json;
