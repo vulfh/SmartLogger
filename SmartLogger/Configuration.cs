@@ -1,4 +1,4 @@
-﻿namespace SmartLogger;
+﻿namespace SmartLogger.Core;
 
 public class Configuration
 {

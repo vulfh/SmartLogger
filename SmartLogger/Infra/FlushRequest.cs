@@ -1,4 +1,4 @@
-﻿namespace SmartLogger.Infra;
+﻿namespace SmartLogger.Core.Infra;
 
 internal record FlushRequest
 {
