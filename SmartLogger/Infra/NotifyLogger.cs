@@ -2,4 +2,4 @@
 
 namespace SmartLogger.Core.Infra;
 
-public delegate  void NotifySubscriberCallback(LogMessage message);  
+public delegate  void NotifyLoggerCallback(LogMessage message);  
