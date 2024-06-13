@@ -73,15 +73,6 @@ public class SmartLogger : ILogAggregator, IDisposable
         }
     }
 
-    public Task FlushAsync(Severity severity = Severity.INFORMATION)
-    {
-        var result = new AsyncMethodCaller(() => Flush(severity))
-                         .BeginInvoke(null, null);
-        return Task.Factory.FromAsync(result, (result) => { });
-    }
-
-
-
     public void LogDebug(string message, int lineNumber, string memberName, string filePath)
     {
         AddLogMessage(Severity.DEBUG, message, lineNumber, memberName, filePath);

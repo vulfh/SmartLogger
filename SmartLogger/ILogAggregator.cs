@@ -36,7 +36,6 @@ public interface ILogAggregator
                   [CallerMemberName] string memberName = Constants.General.NotAssigned,
                   [CallerFilePath] string filePath = Constants.General.NotAssigned);
     Task Flush(Severity severity = Severity.INFORMATION);
-    Task FlushAsync(Severity severity = Severity.INFORMATION);
 
     void RegisterAggregatedLogger(string name, NotifyLoggerCallback observer);
 
