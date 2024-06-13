@@ -15,8 +15,10 @@ public class SmartLogger : ILogAggregator, IDisposable
     #endregion
 
     private ConcurrentQueue<LogMessageContainer> _messages = new();
-    private ConcurrentDictionary<string, NotifySubscriberCallback> _flushSubscribers = new();
+    private ConcurrentDictionary<string, NotifyLoggerCallback> _flushSubscribers = new();
+    private ConcurrentDictionary<string, NotifyLoggerCallback> _immediateSubscribers = new();
     private ConcurrentQueue<FlushRequest> _flushRequests = new();
+    private Task _flushingTask;
 
     private Configuration _configuration;
 
@@ -39,19 +41,24 @@ public class SmartLogger : ILogAggregator, IDisposable
     #endregion
 
     #region ILogAggregator
-    public void Flush(Severity severity = Severity.INFORMATION)
+    public Task Flush(Severity severity = Severity.INFORMATION)
     {
         AddStopFlushMarker();
         _flushRequests.Enqueue(new FlushRequest(severity));
         if (Interlocked.CompareExchange(ref _mode, FLUSH_MODE, AGGREGATE_MODE) == AGGREGATE_MODE)
         {
-            while (_flushRequests.TryDequeue(out var flushRequest))
-            {
-                FlushTillStopMarker(flushRequest.Severity);   
-            }
+            _flushingTask = Task.Run(() =>
+                    {
+                        while (_flushRequests.TryDequeue(out var flushRequest))
+                        {
+                            FlushTillStopMarker(flushRequest.Severity);
+                        }
 
-            Interlocked.CompareExchange(ref _mode, AGGREGATE_MODE, FLUSH_MODE);
+                        Interlocked.CompareExchange(ref _mode, AGGREGATE_MODE, FLUSH_MODE);
+                    }
+            );
         }
+        return _flushingTask;
     }
 
     private void FlushTillStopMarker(Severity severity)
@@ -61,7 +68,7 @@ public class SmartLogger : ILogAggregator, IDisposable
         {
             if (message?.Message?.Serverity >= severity)
             {
-                NotifySubscribers(message.Message);
+                NotifySubscribers(message.Message,_flushSubscribers);
             }
         }
     }
@@ -110,14 +117,24 @@ public class SmartLogger : ILogAggregator, IDisposable
         AddLogMessage(Severity.WARNING, message, lineNumber, memberName, filePath);
     }
 
-    public void RegisterObserver(string name, NotifySubscriberCallback observer)
+    public void RegisterAggregatedLogger(string name, NotifyLoggerCallback observer)
     {
        _flushSubscribers.AddOrUpdate(name, observer,(name,observer) => observer);
     }
 
-    public bool UnregisterObserver(string name)
+    public void RegisterImmediateLogger(string name, NotifyLoggerCallback observer)
+    {
+        _immediateSubscribers.AddOrUpdate(name, observer, (name, observer) => observer);
+    }
+
+    public bool UnregisterAggregatedLogger(string name)
     {
         return _flushSubscribers.Remove(name, out _);
+    }
+
+    public bool UnregisterImmediateLogger(string name)
+    {
+        return _immediateSubscribers.Remove(name, out _);
     }
     #endregion
 
@@ -127,7 +144,8 @@ public class SmartLogger : ILogAggregator, IDisposable
     {
         _messages.Clear();
         _flushSubscribers.Clear();
-        _flushSubscribers.Clear();
+        _flushRequests.Clear();
+        _immediateSubscribers.Clear();
     }
 
     #endregion
@@ -140,18 +158,17 @@ public class SmartLogger : ILogAggregator, IDisposable
                                string sourcePath,
                                string memberName)
     {
-        DoActionOnlyInAggregateMode(() =>
-        {
-            var logMessage = new LogMessage(CurrentSequence(),
-                                            severity,
-                                            DateTime.Now,
-                                            message,
-                                            null,
-                                            lineNumber,
-                                            sourcePath,
-                                            memberName);
-            _messages.Enqueue(new LogMessageContainer(logMessage));
-        });
+
+        var logMessage = new LogMessage(CurrentSequence(),
+                                        severity,
+                                        DateTime.Now,
+                                        message,
+                                        null,
+                                        lineNumber,
+                                        sourcePath,
+                                        memberName);
+        _messages.Enqueue(new LogMessageContainer(logMessage));
+        NotifyImmedtiateLogSubscribers(logMessage);
 
     }
 
@@ -161,9 +178,7 @@ public class SmartLogger : ILogAggregator, IDisposable
                               string sourcePath,
                               string memberName)
     {
-        DoActionOnlyInAggregateMode(() =>
-        {
-            var logMessage = new LogMessage(CurrentSequence(),
+        var logMessage = new LogMessage(CurrentSequence(),
                                             severity,
                                             DateTime.Now,
                                             null,
@@ -171,8 +186,8 @@ public class SmartLogger : ILogAggregator, IDisposable
                                             lineNumber,
                                             sourcePath,
                                             memberName);
-            _messages.Enqueue(new LogMessageContainer(logMessage));
-        });
+        _messages.Enqueue(new LogMessageContainer(logMessage));
+        NotifyImmedtiateLogSubscribers(logMessage);
 
     }
 
@@ -193,9 +208,9 @@ public class SmartLogger : ILogAggregator, IDisposable
         return Interlocked.Increment(ref _eventSequenceCounter);
     }
 
-    private void NotifySubscribers(LogMessage logMessage) 
+    private void NotifySubscribers(LogMessage logMessage, ConcurrentDictionary<string,NotifyLoggerCallback> subscribers) 
     {
-        foreach(var subscriber in _flushSubscribers)
+        foreach(var subscriber in subscribers)
         {
             AsyncMethodCaller<LogMessage> asyncMethodCaller = (logMessage) =>
             {
@@ -210,5 +225,12 @@ public class SmartLogger : ILogAggregator, IDisposable
         }
     }
 
+    private void NotifyImmedtiateLogSubscribers(LogMessage logMessage)
+    {
+        if (_immediateSubscribers.Count() > 0)
+        {
+            NotifySubscribers(logMessage, _immediateSubscribers);
+        }
+    }
     #endregion
 }

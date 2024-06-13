@@ -35,11 +35,14 @@ public interface ILogAggregator
                   [CallerLineNumber] int lineNumber = 0,
                   [CallerMemberName] string memberName = Constants.General.NotAssigned,
                   [CallerFilePath] string filePath = Constants.General.NotAssigned);
-    void Flush(Severity severity = Severity.INFORMATION);
+    Task Flush(Severity severity = Severity.INFORMATION);
     Task FlushAsync(Severity severity = Severity.INFORMATION);
 
-    void RegisterObserver(string name, NotifySubscriberCallback observer);
+    void RegisterAggregatedLogger(string name, NotifyLoggerCallback observer);
 
-    bool UnregisterObserver(string name);
+    void RegisterImmediateLogger(string name, NotifyLoggerCallback observer);
+
+    bool UnregisterAggregatedLogger(string name);
+    bool UnregisterImmediateLogger(string name);
 
 }
