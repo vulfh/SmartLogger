@@ -11,6 +11,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{130866E0-D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartLogger", "SmartLogger\SmartLogger.csproj", "{5391EDC7-3619-4C00-BB20-62A7213E480D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{B01EA374-7849-4820-812F-23176901E713}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartLoggerTests", "SmartLoggerTests\SmartLoggerTests.csproj", "{8AA03B4A-05FD-4C1C-8920-AE2C7A6FF892}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +29,10 @@ Global
 		{5391EDC7-3619-4C00-BB20-62A7213E480D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5391EDC7-3619-4C00-BB20-62A7213E480D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5391EDC7-3619-4C00-BB20-62A7213E480D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8AA03B4A-05FD-4C1C-8920-AE2C7A6FF892}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8AA03B4A-05FD-4C1C-8920-AE2C7A6FF892}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8AA03B4A-05FD-4C1C-8920-AE2C7A6FF892}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8AA03B4A-05FD-4C1C-8920-AE2C7A6FF892}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -32,6 +40,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{5978C983-36F8-4BFD-B960-38B307324621} = {46AB493E-C191-4BBB-8F7D-5EB8EC2BBC7C}
 		{5391EDC7-3619-4C00-BB20-62A7213E480D} = {130866E0-DDE1-48CA-81C2-9281B8A4D261}
+		{8AA03B4A-05FD-4C1C-8920-AE2C7A6FF892} = {B01EA374-7849-4820-812F-23176901E713}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FCBBFA69-4EA6-4569-A451-E54E03C40256}

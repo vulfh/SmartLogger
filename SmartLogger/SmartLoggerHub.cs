@@ -5,7 +5,7 @@ using System.Collections.Concurrent;
 
 namespace SmartLogger.Core;
 
-public class SmartLogger : ILogAggregator, IDisposable
+public class SmartLoggerHub : ILogAggregator, IDisposable
 {
     #region Constants
 
@@ -26,12 +26,12 @@ public class SmartLogger : ILogAggregator, IDisposable
 
     #region Constructor
 
-    public SmartLogger()
+    public SmartLoggerHub()
     {
         _configuration  = new Configuration();
     }
 
-    public SmartLogger(Configuration configuration)
+    public SmartLoggerHub(Configuration configuration)
     {
         _configuration = configuration;
     }
@@ -41,18 +41,10 @@ public class SmartLogger : ILogAggregator, IDisposable
     #region ILogAggregator
     public void Flush(Severity severity = Severity.INFORMATION)
     {
-        AddStopFlushMarker();
-        _flushRequests.Enqueue(new FlushRequest(severity));
-        if (Interlocked.CompareExchange(ref _mode, FLUSH_MODE, AGGREGATE_MODE) == AGGREGATE_MODE)
-        {
-            while (_flushRequests.TryDequeue(out var flushRequest))
-            {
-                FlushTillStopMarker(flushRequest.Severity);   
-            }
-
-            Interlocked.CompareExchange(ref _mode, AGGREGATE_MODE, FLUSH_MODE);
-        }
+        AddStopFlushMarker(severity);
+        FlushLogMessages();
     }
+
 
     private void FlushTillStopMarker(Severity severity)
     {
@@ -68,9 +60,8 @@ public class SmartLogger : ILogAggregator, IDisposable
 
     public Task FlushAsync(Severity severity = Severity.INFORMATION)
     {
-        var result = new AsyncMethodCaller(() => Flush(severity))
-                         .BeginInvoke(null, null);
-        return Task.Factory.FromAsync(result, (result) => { });
+        AddStopFlushMarker(severity);
+        return Task.Factory.StartNew(() => FlushLogMessages());
     }
 
 
@@ -134,6 +125,18 @@ public class SmartLogger : ILogAggregator, IDisposable
 
     #region Private Methods
 
+    private void FlushLogMessages()
+    {
+        if (Interlocked.CompareExchange(ref _mode, FLUSH_MODE, AGGREGATE_MODE) == AGGREGATE_MODE)
+        {
+            while (_flushRequests.TryDequeue(out var flushRequest))
+            {
+                FlushTillStopMarker(flushRequest.Severity);
+            }
+
+            Interlocked.CompareExchange(ref _mode, AGGREGATE_MODE, FLUSH_MODE);
+        }
+    }
     private void AddLogMessage(Severity severity,
                                string message,
                                int lineNumber,
@@ -161,9 +164,7 @@ public class SmartLogger : ILogAggregator, IDisposable
                               string sourcePath,
                               string memberName)
     {
-        DoActionOnlyInAggregateMode(() =>
-        {
-            var logMessage = new LogMessage(CurrentSequence(),
+        var logMessage = new LogMessage(CurrentSequence(),
                                             severity,
                                             DateTime.Now,
                                             null,
@@ -171,14 +172,14 @@ public class SmartLogger : ILogAggregator, IDisposable
                                             lineNumber,
                                             sourcePath,
                                             memberName);
-            _messages.Enqueue(new LogMessageContainer(logMessage));
-        });
+        _messages.Enqueue(new LogMessageContainer(logMessage));
 
     }
 
-    private void AddStopFlushMarker()
+    private void AddStopFlushMarker(Severity severity)
     {
         _messages.Enqueue(new LogMessageContainer(null, true));
+        _flushRequests.Enqueue(new FlushRequest(severity));
     }
 
     private void DoActionOnlyInAggregateMode(Action action)
@@ -197,16 +198,11 @@ public class SmartLogger : ILogAggregator, IDisposable
     {
         foreach(var subscriber in _flushSubscribers)
         {
-            AsyncMethodCaller<LogMessage> asyncMethodCaller = (logMessage) =>
+            try
             {
-                try
-                {
-                    subscriber.Value.Invoke(logMessage);
-                }
-                finally { }
-            
-            };
-            asyncMethodCaller.BeginInvoke(logMessage,null,null);
+                subscriber.Value.Invoke(logMessage);
+            }
+            finally { }
         }
     }
 

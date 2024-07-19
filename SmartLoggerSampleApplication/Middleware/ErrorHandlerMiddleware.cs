@@ -1,4 +1,4 @@
-﻿namespace SmartLoggerSampleApplication.Middleware;
+﻿    namespace SmartLoggerSampleApplication.Middleware;
 
 using SmartLogger.Core;
 using SmartLoggerSampleApplication.Exceptions;
@@ -40,6 +40,7 @@ public class ErrorHandlerMiddleware
                 default:
                     // unhandled error
                     response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    severity = Severity.DEBUG;
                     break;
             }
 

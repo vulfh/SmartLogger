@@ -1,4 +1,5 @@
 using SmartLogger.Core;
+using SmartLoggerSampleApplication.Exceptions;
 using SmartLoggerSampleApplication.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddScoped<ILogAggregator, SmartLogger.Core.SmartLogger>();
+builder.Services.AddScoped<ILogAggregator, SmartLogger.Core.SmartLoggerHub>();
 
 var app = builder.Build();
 
@@ -47,8 +48,22 @@ app.MapGet("/weatherforecast", () =>
      return "Happy flow !!!";
 });
 
-app.MapGet("/errorflow", (ILogAggregator logAggregator) => {
-    logAggregator.LogDebug("Start error flow");
+app.MapGet("/error404flow", (ILogAggregator logAggregator) => {
+    logAggregator.LogDebug("Start not found flow");
+    logAggregator.LogInformation("HappyFlow finished");
+    throw new KeyNotFoundException("An error occured");
+});
+
+app.MapGet("/error400flow", (ILogAggregator logAggregator) => {
+    logAggregator.LogDebug("Start bad request flow");
+    logAggregator.LogInformation("HappyFlow finished");
+    throw new BadRequestException();
+});
+
+app.MapGet("/exceptionflow", (ILogAggregator logAggregator) => {
+    logAggregator.LogDebug("Start exception flow");
+    logAggregator.LogDebug("");
+    logAggregator.LogInformation("exception flow finished");
     throw new Exception("An error occured");
 });
 
