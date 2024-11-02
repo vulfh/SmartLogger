@@ -1,4 +1,6 @@
-﻿namespace SmartLogger.Core;
+﻿using SmartLogger.Core.Infra;
+
+namespace SmartLogger.Core;
 
 public class Configuration
 {
@@ -31,6 +33,10 @@ public class Configuration
     /// TimeZone of log timestamp. By default is UTC
     /// </summary>
     public TimeZoneInfo TimeZone { get; private set; } = TimeZoneInfo.Utc;
+
+    public Mode Mode { get; private set; } = Mode.AGGREGATE;
+
+    public Severity ByPassSeverityLevel { get; private set; } = Severity.INFORMATION;
 
 
 }

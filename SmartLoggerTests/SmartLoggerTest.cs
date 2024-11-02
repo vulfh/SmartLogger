@@ -1,5 +1,6 @@
 using Moq;
 using SmartLogger.Core;
+using SmartLogger.Core.Exceptions;
 using SmartLogger.Core.LogPersistance;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
@@ -156,5 +157,74 @@ public class SmartLoggerTest
 
         #endregion
 
+    }
+
+
+    [Fact]
+    public void Expect_ByPassLogWritesAtInformationSeverity()
+    {
+        #region Assert
+
+        List<string> logMessages = new();
+        flushLogSubscriberMock.Setup(mock => mock
+                                    .NotifyLogMessage(It.IsAny<LogMessage>()))
+                                    .Callback<LogMessage>((logMessage) => {
+                                        logMessages.Add(logMessage.Message);
+                                    });
+        objectUnderTest.RegisterObserver("Test", flushLogSubscriberMock.Object.NotifyLogMessage);
+
+        #endregion
+
+        #region Act
+
+        objectUnderTest.StartByPassLogging(Severity.INFORMATION);
+
+        objectUnderTest.LogWarning("Warning");
+        objectUnderTest.LogDebug("Debug");
+        objectUnderTest.LogError("Error");
+        objectUnderTest.LogInformation("Information");
+
+        #endregion
+
+        #region Assert
+
+        Assert.That(logMessages.Count == 3, "Expected only 3 messages");
+        Assert.That(string.Equals(logMessages[0], "Warning"), "Warning message is missing");
+        Assert.That(string.Equals(logMessages[1], "Error"), "Error message is missing");
+        Assert.That(string.Equals(logMessages[2], "Information"), "Information message is missing");
+
+        #endregion
+    }
+
+    [Fact]
+    public void Expect_ExceptionOnByPassLogginWhileAggregation()
+    {
+        #region Assert
+
+        flushLogSubscriberMock.Setup(mock => mock
+                                    .NotifyLogMessage(It.IsAny<LogMessage>()))
+                                    .Callback<LogMessage>((logMessage) => {
+                                       
+                                    });
+        objectUnderTest.RegisterObserver("Test", flushLogSubscriberMock.Object.NotifyLogMessage);
+
+        #endregion
+
+        #region Act
+
+
+        objectUnderTest.LogWarning("Warning");
+        objectUnderTest.LogDebug("Debug");
+        objectUnderTest.LogError("Error");
+        objectUnderTest.LogInformation("Information");
+
+
+        #endregion
+
+        #region Assert
+
+        Assert.Catch<InvalidBypassLoggingRequest>(()=>objectUnderTest.StartByPassLogging(Severity.INFORMATION));
+
+        #endregion
     }
 }
