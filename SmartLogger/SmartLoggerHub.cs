@@ -1,5 +1,7 @@
-﻿using SmartLogger.Core.Infra;
+﻿using SmartLogger.Core.Exceptions;
+using SmartLogger.Core.Infra;
 using SmartLogger.Core.LogPersistance;
+using System;
 using System.Collections.Concurrent;
 
 
@@ -7,61 +9,73 @@ namespace SmartLogger.Core;
 
 public class SmartLoggerHub : ILogAggregator, IDisposable
 {
-    #region Constants
-
-    private const int AGGREGATE_MODE = 0;
-    private const int FLUSH_MODE = 1;
-
-    #endregion
 
     private ConcurrentQueue<LogMessageContainer> _messages = new();
+    
     private ConcurrentDictionary<string, NotifySubscriberCallback> _flushSubscribers = new();
+    
     private ConcurrentQueue<FlushRequest> _flushRequests = new();
 
     private Configuration _configuration;
 
-    private int _mode = AGGREGATE_MODE;
+    private Mode _mode = Mode.AGGREGATE;
 
     private int _eventSequenceCounter = 0;
+
+    private Severity _byPassLogSeverityLevel;
 
     #region Constructor
 
     public SmartLoggerHub()
     {
         _configuration  = new Configuration();
+        SetInitialLogMode();
     }
 
     public SmartLoggerHub(Configuration configuration)
     {
         _configuration = configuration;
+        SetInitialLogMode();
     }
 
+    #endregion
+
+    #region Properties
+
+    public Mode Mode => _mode;
     #endregion
 
     #region ILogAggregator
     public void Flush(Severity severity = Severity.INFORMATION)
     {
-        AddStopFlushMarker(severity);
-        FlushLogMessages();
+        if (!_messages.IsEmpty)
+        {
+            AddStopFlushMarker(severity);
+            FlushLogMessages();
+        }
     }
 
 
-    private void FlushTillStopMarker(Severity severity)
+    private void FlushTillStopMarker(Severity severityLevel)
     {
         while (_messages.TryDequeue(out var message)
               && !message.IsStopFlushMarker)
         {
-            if (message?.Message?.Serverity >= severity)
-            {
-                NotifySubscribers(message.Message);
-            }
+            NotifySubscribersAccordingSeverityLevel(message.Message, severityLevel);
         }
     }
 
     public Task FlushAsync(Severity severity = Severity.INFORMATION)
     {
-        AddStopFlushMarker(severity);
-        return Task.Factory.StartNew(() => FlushLogMessages());
+        if (!_messages.IsEmpty)
+        {
+            AddStopFlushMarker(severity);
+            return Task.Factory.StartNew(() => FlushLogMessages());
+        }
+        else
+        {
+            return Task.CompletedTask;
+        }
     }
 
 
@@ -110,6 +124,26 @@ public class SmartLoggerHub : ILogAggregator, IDisposable
     {
         return _flushSubscribers.Remove(name, out _);
     }
+
+    public void StartLogAggregation()
+    {
+        _mode = Mode.AGGREGATE;
+    }
+    public void StartByPassLogging(Severity severity)
+    {
+        _byPassLogSeverityLevel = severity;
+        if (_mode == Mode.BYPASS)
+            return;
+
+        if (_messages.IsEmpty)
+        {
+            _mode = Mode.BYPASS;
+        }
+        else
+        {
+            throw new InvalidBypassLoggingRequest();
+        }
+    }
     #endregion
 
     #region IDosposable
@@ -125,16 +159,23 @@ public class SmartLoggerHub : ILogAggregator, IDisposable
 
     #region Private Methods
 
+    private void SetInitialLogMode() 
+    {
+        if(_configuration.Mode == Mode.AGGREGATE)
+        {
+            StartLogAggregation();
+        }
+        else
+        {
+            StartByPassLogging(_configuration.ByPassSeverityLevel);
+        }
+    }
+
     private void FlushLogMessages()
     {
-        if (Interlocked.CompareExchange(ref _mode, FLUSH_MODE, AGGREGATE_MODE) == AGGREGATE_MODE)
+        while (_flushRequests.TryDequeue(out var flushRequest))
         {
-            while (_flushRequests.TryDequeue(out var flushRequest))
-            {
-                FlushTillStopMarker(flushRequest.Severity);
-            }
-
-            Interlocked.CompareExchange(ref _mode, AGGREGATE_MODE, FLUSH_MODE);
+            FlushTillStopMarker(flushRequest.Severity);
         }
     }
     private void AddLogMessage(Severity severity,
@@ -143,9 +184,9 @@ public class SmartLoggerHub : ILogAggregator, IDisposable
                                string sourcePath,
                                string memberName)
     {
-        DoActionOnlyInAggregateMode(() =>
-        {
-            var logMessage = new LogMessage(CurrentSequence(),
+
+
+        var logMessage = new LogMessage(CurrentSequence(),
                                             severity,
                                             DateTime.Now,
                                             message,
@@ -153,9 +194,8 @@ public class SmartLoggerHub : ILogAggregator, IDisposable
                                             lineNumber,
                                             sourcePath,
                                             memberName);
-            _messages.Enqueue(new LogMessageContainer(logMessage));
-        });
-
+        PublishLogMessage(logMessage);
+       
     }
 
     private void AddLogMessage(Severity severity,
@@ -172,22 +212,34 @@ public class SmartLoggerHub : ILogAggregator, IDisposable
                                             lineNumber,
                                             sourcePath,
                                             memberName);
-        _messages.Enqueue(new LogMessageContainer(logMessage));
+        PublishLogMessage(logMessage);
 
+    }
+
+    private void PublishLogMessage(LogMessage message)
+    {
+        if (_mode == Mode.AGGREGATE)
+        {
+            _messages.Enqueue(new LogMessageContainer(message));
+        }
+        else
+        {
+            NotifySubscribersAccordingSeverityLevel(message,_byPassLogSeverityLevel);
+        }
+    }
+
+    private void NotifySubscribersAccordingSeverityLevel(LogMessage message,Severity severityLevel)
+    {
+        if (message.Serverity >= severityLevel)
+        {
+            NotifySubscribers(message);
+        }
     }
 
     private void AddStopFlushMarker(Severity severity)
     {
         _messages.Enqueue(new LogMessageContainer(null, true));
         _flushRequests.Enqueue(new FlushRequest(severity));
-    }
-
-    private void DoActionOnlyInAggregateMode(Action action)
-    {
-        if (Interlocked.CompareExchange(ref _mode, _mode, _mode) == AGGREGATE_MODE)
-        {
-            action.Invoke();
-        }
     }
     private int CurrentSequence()
     {

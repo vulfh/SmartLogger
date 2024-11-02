@@ -6,6 +6,7 @@ namespace SmartLogger.Core;
 public interface ILogAggregator
 {
 
+    Mode Mode { get; }
     void LogInformation(string message, 
                         [CallerLineNumber] int lineNumber = 0,
                         [CallerMemberName] string memberName = Constants.General.NotAssigned, 
@@ -41,5 +42,9 @@ public interface ILogAggregator
     void RegisterObserver(string name, NotifySubscriberCallback observer);
 
     bool UnregisterObserver(string name);
+
+    void StartLogAggregation();
+    void StartByPassLogging(Severity severity);
+    
 
 }
